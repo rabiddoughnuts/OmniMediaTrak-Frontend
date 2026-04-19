@@ -124,10 +124,10 @@ Typography will use a geometric sans-serif for readability and a consistent, mod
 
 - **Buttons:** Solid with rounded corners (radius 8px) and employ a two-tone hover shift using accent and neutral shades.
 
-![HomeWireframe](./Wireframes/HomeWireframe.png)
+![HomeWireframe](./wireframes/HomeWireframe.png)
 
-![Media_Lists](./Wireframes/Media_Lists.png)
+![Media_Lists](./wireframes/Media_Lists.png)
 
-![Specific_Media](./Wireframes/Specific_Media.png)
+![Specific_Media](./wireframes/Specific_Media.png)
 
-![Register](./Wireframes/Register.png)
+![Register](./wireframes/Register.png)
