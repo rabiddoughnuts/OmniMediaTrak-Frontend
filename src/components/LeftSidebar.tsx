@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 
@@ -36,7 +37,12 @@ export default function LeftSidebar() {
   if (!showMediaTypes) {
     return (
       <div className="ad-slot">
-        <img src="/images/left-ad-placeholder.svg" alt="Left ad slot" />
+        <Image
+          src="/images/left-ad-placeholder.svg"
+          alt="Left ad slot"
+          width={300}
+          height={600}
+        />
       </div>
     );
   }

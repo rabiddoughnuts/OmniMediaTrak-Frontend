@@ -21,7 +21,10 @@ type MediaItem = {
 };
 
 type ListResponse = {
-  items: Array<{ media_id: string }>;
+  items: Array<{ media_id?: string; id?: string }>;
+  page: number;
+  pageSize: number;
+  total: number;
 };
 
 type Props = {
@@ -87,12 +90,20 @@ export default function CatalogTable({ items }: Props) {
     "description",
   ]);
 
-  useEffect(() => {
+  function getListMediaId(item: { media_id?: string; id?: string }): string | null {
+    return item.media_id ?? item.id ?? null;
+  }
+
+  async function loadList() {
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
 
-    async function loadList() {
-      try {
-        const response = await fetch(`${baseUrl}/list?page=1&pageSize=200`, {
+    try {
+      const ids = new Set<string>();
+      let page = 1;
+      let total = 0;
+
+      while (true) {
+        const response = await fetch(`${baseUrl}/list?page=${page}&pageSize=50`, {
           credentials: "include",
         });
 
@@ -106,7 +117,67 @@ export default function CatalogTable({ items }: Props) {
         }
 
         const data = (await response.json()) as ListResponse;
-        const ids = new Set((data.items ?? []).map((item) => item.media_id));
+        data.items?.forEach((item) => {
+          const mediaId = getListMediaId(item);
+          if (mediaId) {
+            ids.add(mediaId);
+          }
+        });
+        total = data.total ?? ids.size;
+
+        if (ids.size >= total || (data.items?.length ?? 0) < 50) {
+          break;
+        }
+
+        page += 1;
+      }
+
+      setListIds(ids);
+      setListStatus("ready");
+    } catch {
+      setListStatus("error");
+    }
+  }
+
+  useEffect(() => {
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
+
+    async function loadInitialList() {
+      try {
+        const ids = new Set<string>();
+        let page = 1;
+        let total = 0;
+
+        while (true) {
+          const response = await fetch(`${baseUrl}/list?page=${page}&pageSize=50`, {
+            credentials: "include",
+          });
+
+          if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+              setListStatus("unauth");
+              return;
+            }
+            setListStatus("error");
+            return;
+          }
+
+          const data = (await response.json()) as ListResponse;
+          data.items?.forEach((item) => {
+            const mediaId = getListMediaId(item);
+            if (mediaId) {
+              ids.add(mediaId);
+            }
+          });
+          total = data.total ?? ids.size;
+
+          if (ids.size >= total || (data.items?.length ?? 0) < 50) {
+            break;
+          }
+
+          page += 1;
+        }
+
         setListIds(ids);
         setListStatus("ready");
       } catch {
@@ -114,7 +185,7 @@ export default function CatalogTable({ items }: Props) {
       }
     }
 
-    loadList();
+    void loadInitialList();
   }, []);
 
   useEffect(() => {
@@ -162,6 +233,7 @@ export default function CatalogTable({ items }: Props) {
 
       setListIds((prev) => new Set(prev).add(mediaId));
       setListStatus("ready");
+      await loadList();
     } finally {
       setPendingId(null);
     }
@@ -186,6 +258,7 @@ export default function CatalogTable({ items }: Props) {
         next.delete(mediaId);
         return next;
       });
+      await loadList();
     } finally {
       setPendingId(null);
     }

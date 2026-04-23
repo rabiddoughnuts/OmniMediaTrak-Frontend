@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
 
 type Feedback = {
@@ -177,14 +178,14 @@ export default function AppHeader() {
   return (
     <header className="header">
       <div className="logo-container">
-        <img
+        <Image
           className="logo-light"
           src="/images/lightlogo.png"
           alt="OmniMediaTrak logo"
           width={64}
           height={64}
         />
-        <img
+        <Image
           className="logo-dark"
           src="/images/darklogo.png"
           alt="OmniMediaTrak logo"
@@ -211,9 +212,6 @@ export default function AppHeader() {
             </button>
             <div className="login-dropdown" id="userDropdown" hidden={!isUserOpen}>
               <div className="user-menu">
-                <Link className="auth-button" href="/profile">
-                  Profile
-                </Link>
                 <button className="theme-toggle" type="button" onClick={toggleTheme}>
                   {isDark ? "Light" : "Dark"}
                 </button>

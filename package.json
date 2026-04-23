@@ -1,24 +1,41 @@
 {
-  "name": "omnimediatrak-frontend",
-  "private": true,
-  "version": "0.1.0",
+  "name": "frontend",
+  "version": "1.0.0",
+  "description": "Frontend code for the OmniMediaTrak web page",
+  "homepage": "https://github.com/WSU-bjoshi/final-project-frontend-sp26-rabiddoughnuts#readme",
+  "bugs": {
+    "url": "https://github.com/WSU-bjoshi/final-project-frontend-sp26-rabiddoughnuts/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WSU-bjoshi/final-project-frontend-sp26-rabiddoughnuts.git"
+  },
+  "license": "ISC",
+  "author": "Brandon Walker",
   "type": "module",
+  "main": "next.config.js",
+  "directories": {
+    "doc": "docs"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "lint": "eslint . --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"No automated frontend tests configured yet\""
   },
   "dependencies": {
-    "next": "^16.1.6",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "next": "^16.2.4",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
   },
   "devDependencies": {
-    "@types/node": "^25.2.1",
-    "@types/react": "^19.2.13",
+    "@types/node": "^25.6.0",
+    "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "typescript": "^5.9.3"
+    "eslint": "^9.39.2",
+    "eslint-config-next": "^16.2.4",
+    "typescript": "^6.0.3"
   }
 }

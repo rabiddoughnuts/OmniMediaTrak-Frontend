@@ -65,7 +65,7 @@ export default async function HomePage() {
             and compare my choices to figure out what to watch next. So I built the
             thing I always wished existed: one clean, unified place to track
             everything I watch, read, or play. No clutter, no digging through menus,
-            no "wait, which app did I put that in?" moments. Just a straightforward,
+            no &quot;wait, which app did I put that in?&quot; moments. Just a straightforward,
             spreadsheet-style dashboard where your entire media life finally lives in
             one spot. The site is free, supported only by tiny, unobtrusive sidebar
             ads and an optional donate button to keep the servers alive. If you have

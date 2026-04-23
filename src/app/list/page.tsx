@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 
 type ListItem = {
   id: string;
+  media_id?: string;
   status: string;
   progress: number | null;
   rating: number | null;
@@ -15,7 +16,6 @@ type ListItem = {
   meta_snapshot: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
-  media_id: string;
   media_row_id: string;
   external_id: string | null;
   title: string;
@@ -94,7 +94,11 @@ function getColumnValue(item: ListItem, key: ColumnKey): string {
   return String(item[key] ?? "");
 }
 
-export default function ListPage() {
+function getListMediaId(item: ListItem): string {
+  return item.media_id ?? item.id;
+}
+
+function ListPageContent() {
   const searchParams = useSearchParams();
   const typeFilter = searchParams.get("type");
   const [items, setItems] = useState<ListItem[]>([]);
@@ -114,10 +118,30 @@ export default function ListPage() {
     "status",
   ]);
 
+  async function loadList() {
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
+
+    try {
+      const response = await fetch(`${baseUrl}/list?page=1&pageSize=24`, {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to load list");
+      }
+
+      const data = (await response.json()) as ListResponse;
+      setItems(data.items ?? []);
+      setStatus("idle");
+    } catch {
+      setStatus("error");
+    }
+  }
+
   useEffect(() => {
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
 
-    async function load() {
+    async function loadInitialList() {
       try {
         const response = await fetch(`${baseUrl}/list?page=1&pageSize=24`, {
           credentials: "include",
@@ -135,7 +159,7 @@ export default function ListPage() {
       }
     }
 
-    load();
+    void loadInitialList();
   }, []);
 
   async function handleRemove(mediaId: string) {
@@ -152,7 +176,8 @@ export default function ListPage() {
         throw new Error("Failed to remove");
       }
 
-      setItems((prev) => prev.filter((item) => item.media_id !== mediaId));
+      setItems((prev) => prev.filter((item) => getListMediaId(item) !== mediaId));
+      await loadList();
     } finally {
       setPendingId(null);
     }
@@ -564,68 +589,80 @@ export default function ListPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredItems.map((item) => (
-                  <tr key={item.id}>
-                    {visibleColumns.includes("cover") && (
-                      <td>
-                        <Image
-                          src={item.cover_url ?? "/images/cover-placeholder.svg"}
-                          alt={item.title}
-                          width={60}
-                          height={90}
-                          className="catalog-cover__img"
-                        />
+                {filteredItems.map((item) => {
+                  const mediaId = getListMediaId(item);
+
+                  return (
+                    <tr key={item.id}>
+                      {visibleColumns.includes("cover") && (
+                        <td>
+                          <Image
+                            src={item.cover_url ?? "/images/cover-placeholder.svg"}
+                            alt={item.title}
+                            width={60}
+                            height={90}
+                            className="catalog-cover__img"
+                          />
+                        </td>
+                      )}
+                      {visibleColumns.includes("title") && <td>{item.title}</td>}
+                      {visibleColumns.includes("release_date") && (
+                        <td>{item.release_date ?? ""}</td>
+                      )}
+                      {visibleColumns.includes("country_of_origin") && (
+                        <td>{item.country_of_origin ?? ""}</td>
+                      )}
+                      {visibleColumns.includes("creators") && (
+                        <td>{item.creators?.join(", ") ?? ""}</td>
+                      )}
+                      {visibleColumns.includes("status") && <td>{item.status}</td>}
+                      {visibleColumns.includes("progress") && <td>{item.progress ?? ""}</td>}
+                      {visibleColumns.includes("rating") && <td>{item.rating ?? ""}</td>}
+                      {visibleColumns.includes("notes") && <td>{item.notes ?? ""}</td>}
+                      {visibleColumns.includes("started_at") && (
+                        <td>{item.started_at ?? ""}</td>
+                      )}
+                      {visibleColumns.includes("completed_at") && (
+                        <td>{item.completed_at ?? ""}</td>
+                      )}
+                      {visibleColumns.includes("meta_snapshot") && (
+                        <td>{JSON.stringify(item.meta_snapshot ?? {})}</td>
+                      )}
+                      {visibleColumns.includes("description") && (
+                        <td>{item.description ?? ""}</td>
+                      )}
+                      {visibleColumns.includes("attributes") && (
+                        <td>{JSON.stringify(item.attributes ?? {})}</td>
+                      )}
+                      {visibleColumns.includes("search_vector") && (
+                        <td>{item.search_vector ?? ""}</td>
+                      )}
+                      <td className="table-action">
+                        <button
+                          className="action-button action-button--danger"
+                          type="button"
+                          disabled={pendingId === mediaId}
+                          onClick={() => handleRemove(mediaId)}
+                        >
+                          {pendingId === mediaId ? "Working..." : "Remove"}
+                        </button>
                       </td>
-                    )}
-                    {visibleColumns.includes("title") && <td>{item.title}</td>}
-                    {visibleColumns.includes("release_date") && (
-                      <td>{item.release_date ?? ""}</td>
-                    )}
-                    {visibleColumns.includes("country_of_origin") && (
-                      <td>{item.country_of_origin ?? ""}</td>
-                    )}
-                    {visibleColumns.includes("creators") && (
-                      <td>{item.creators?.join(", ") ?? ""}</td>
-                    )}
-                    {visibleColumns.includes("status") && <td>{item.status}</td>}
-                    {visibleColumns.includes("progress") && <td>{item.progress ?? ""}</td>}
-                    {visibleColumns.includes("rating") && <td>{item.rating ?? ""}</td>}
-                    {visibleColumns.includes("notes") && <td>{item.notes ?? ""}</td>}
-                    {visibleColumns.includes("started_at") && (
-                      <td>{item.started_at ?? ""}</td>
-                    )}
-                    {visibleColumns.includes("completed_at") && (
-                      <td>{item.completed_at ?? ""}</td>
-                    )}
-                    {visibleColumns.includes("meta_snapshot") && (
-                      <td>{JSON.stringify(item.meta_snapshot ?? {})}</td>
-                    )}
-                    {visibleColumns.includes("description") && (
-                      <td>{item.description ?? ""}</td>
-                    )}
-                    {visibleColumns.includes("attributes") && (
-                      <td>{JSON.stringify(item.attributes ?? {})}</td>
-                    )}
-                    {visibleColumns.includes("search_vector") && (
-                      <td>{item.search_vector ?? ""}</td>
-                    )}
-                    <td className="table-action">
-                      <button
-                        className="action-button action-button--danger"
-                        type="button"
-                        disabled={pendingId === item.media_id}
-                        onClick={() => handleRemove(item.media_id)}
-                      >
-                        {pendingId === item.media_id ? "Working..." : "Remove"}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         </>
       )}
     </section>
+  );
+}
+
+export default function ListPage() {
+  return (
+    <Suspense fallback={null}>
+      <ListPageContent />
+    </Suspense>
   );
 }

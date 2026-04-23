@@ -119,7 +119,7 @@ export default async function CatalogPage({
   const resolvedParams = (await searchParams) ?? {};
   const q = resolvedParams.q ?? "";
   const type = resolvedParams.type ?? "";
-  const { items, total } = await fetchCatalog({ q, type });
+  const { items } = await fetchCatalog({ q, type });
 
   return (
     <section className="page">

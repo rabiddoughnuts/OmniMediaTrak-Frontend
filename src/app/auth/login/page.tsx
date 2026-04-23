@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 type FormState = {
@@ -13,7 +13,7 @@ type Feedback = {
   message: string;
 } | null;
 
-export default function LoginPage() {
+function LoginPageContent() {
   const [form, setForm] = useState<FormState>({ email: "", password: "" });
   const [status, setStatus] = useState<"idle" | "loading">("idle");
   const [feedback, setFeedback] = useState<Feedback>(null);
@@ -117,5 +117,13 @@ export default function LoginPage() {
         </p>
       </section>
     </section>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPageContent />
+    </Suspense>
   );
 }
