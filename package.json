@@ -2,15 +2,16 @@
   "name": "frontend",
   "version": "1.0.0",
   "description": "Frontend code for the OmniMediaTrak web page",
-  "homepage": "https://github.com/WSU-bjoshi/final-project-frontend-sp26-rabiddoughnuts#readme",
+  "private": true,
+  "homepage": "https://github.com/rabiddoughnuts/OmniMediaTrak-Frontend#readme",
   "bugs": {
-    "url": "https://github.com/WSU-bjoshi/final-project-frontend-sp26-rabiddoughnuts/issues"
+    "url": "https://github.com/rabiddoughnuts/OmniMediaTrak-Frontend/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/WSU-bjoshi/final-project-frontend-sp26-rabiddoughnuts.git"
+    "url": "git+https://github.com/rabiddoughnuts/OmniMediaTrak-Frontend.git"
   },
-  "license": "ISC",
+  "license": "UNLICENSED",
   "author": "Brandon Walker",
   "type": "module",
   "main": "next.config.js",
