@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { browserApiUrl } from "../../../lib/api-url";
+import { notifyAuthChanged } from "../../../lib/auth-state";
 
 type Feedback = {
   type: "success" | "error";
@@ -15,10 +17,8 @@ export default function LogoutPage() {
     setStatus("loading");
     setFeedback(null);
 
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
-
     try {
-      const response = await fetch(`${baseUrl}/auth/logout`, {
+      const response = await fetch(browserApiUrl("/auth/logout"), {
         method: "POST",
         credentials: "include",
       });
@@ -27,8 +27,8 @@ export default function LogoutPage() {
         throw new Error("Logout failed");
       }
 
-      window.dispatchEvent(new Event("omnimediatrak:auth"));
-      setFeedback({ type: "success", message: "You are signed out." });
+      notifyAuthChanged("logout");
+      window.location.assign("/");
     } catch (error) {
       setFeedback({
         type: "error",

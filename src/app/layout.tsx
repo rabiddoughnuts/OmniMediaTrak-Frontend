@@ -5,13 +5,14 @@ import Image from "next/image";
 import AppHeader from "../components/AppHeader";
 import LeftSidebar from "../components/LeftSidebar";
 import AppNav from "../components/AppNav";
+import RouteMetadata from "../components/RouteMetadata";
 
 export const metadata: Metadata = {
   title: "OmniMediaTrak",
-  description: "Private alpha MVP",
+  description: "Private alpha multimedia tracker",
   openGraph: {
     title: "OmniMediaTrak",
-    description: "Private alpha MVP",
+    description: "Private alpha multimedia tracker",
     type: "website",
   },
 };
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
+        <RouteMetadata />
         <Suspense fallback={null}>
           <AppHeader />
         </Suspense>
@@ -48,6 +50,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
           <footer className="footer">
             <p>&copy; OmniMedia Solutions</p>
+            <p className="footer__links"><a href="/privacy">Privacy</a> <a href="/sources">Sources</a> <a href="/feedback">Feedback</a> <a href="/contact">Contact</a></p>
           </footer>
         </div>
       </body>

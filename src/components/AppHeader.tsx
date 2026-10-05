@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
+import { browserApiUrl } from "../lib/api-url";
+import { AUTH_CHANGED_EVENT, AUTH_CHANGE_STORAGE_KEY, notifyAuthChanged } from "../lib/auth-state";
 
 type Feedback = {
   type: "success" | "error";
@@ -12,6 +14,8 @@ type Feedback = {
 
 type User = {
   id: string;
+  username: string;
+  displayName: string;
   email: string;
 };
 
@@ -56,11 +60,9 @@ export default function AppHeader() {
 
   useEffect(() => {
     let isMounted = true;
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
-
     async function loadUser() {
       try {
-        const response = await fetch(`${baseUrl}/auth/me`, {
+        const response = await fetch(browserApiUrl("/auth/me"), {
           credentials: "include",
         });
 
@@ -87,11 +89,17 @@ export default function AppHeader() {
     };
 
     void loadUser();
-    window.addEventListener("omnimediatrak:auth", handleAuthChanged);
+    const handleStoredAuthChange = (event: StorageEvent) => {
+      if (event.key === AUTH_CHANGE_STORAGE_KEY) window.location.reload();
+    };
+
+    window.addEventListener(AUTH_CHANGED_EVENT, handleAuthChanged);
+    window.addEventListener("storage", handleStoredAuthChange);
 
     return () => {
       isMounted = false;
-      window.removeEventListener("omnimediatrak:auth", handleAuthChanged);
+      window.removeEventListener(AUTH_CHANGED_EVENT, handleAuthChanged);
+      window.removeEventListener("storage", handleStoredAuthChange);
     };
   }, []);
 
@@ -125,16 +133,21 @@ export default function AppHeader() {
   }
 
   async function handleLogout() {
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
-
     try {
-      await fetch(`${baseUrl}/auth/logout`, {
+      const response = await fetch(browserApiUrl("/auth/logout"), {
         method: "POST",
         credentials: "include",
       });
-    } finally {
+      if (!response.ok) throw new Error("Logout failed");
       setUser(null);
       setIsUserOpen(false);
+      notifyAuthChanged("logout");
+      window.location.reload();
+    } catch (error) {
+      setFeedback({
+        type: "error",
+        message: error instanceof Error ? error.message : "Logout failed",
+      });
     }
   }
 
@@ -142,27 +155,35 @@ export default function AppHeader() {
     event.preventDefault();
     setFeedback(null);
 
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
-
     try {
-      const response = await fetch(`${baseUrl}/auth/login`, {
+      const response = await fetch(browserApiUrl("/auth/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ email, password }),
       });
 
+      const contentType = response.headers.get("content-type") ?? "";
+      if (!contentType.includes("application/json")) {
+        throw new Error("Login service returned an invalid response");
+      }
+      const data = (await response.json()) as { user?: User; error?: string };
+
       if (!response.ok) {
-        const data = (await response.json()) as { error?: string };
         throw new Error(data.error ?? "Login failed");
       }
 
-      const data = (await response.json()) as { user?: User };
       setUser(data.user ?? null);
       setFeedback({ type: "success", message: "Signed in." });
       setEmail("");
       setPassword("");
       setIsLoginOpen(false);
+      notifyAuthChanged("login");
+      if (pathname === "/auth/register") {
+        window.location.assign("/");
+      } else {
+        window.location.reload();
+      }
     } catch (error) {
       setFeedback({
         type: "error",
@@ -173,7 +194,7 @@ export default function AppHeader() {
 
   const queryString = searchParams?.toString();
   const nextPath = queryString ? `${pathname}?${queryString}` : pathname;
-  const userLabel = user?.email?.split("@")[0] ?? "Account";
+  const userLabel = user?.displayName ?? user?.username ?? "Account";
 
   return (
     <header className="header">
@@ -212,6 +233,9 @@ export default function AppHeader() {
             </button>
             <div className="login-dropdown" id="userDropdown" hidden={!isUserOpen}>
               <div className="user-menu">
+                <Link className="auth-button" href="/account" onClick={() => setIsUserOpen(false)}>
+                  Profile
+                </Link>
                 <button className="theme-toggle" type="button" onClick={toggleTheme}>
                   {isDark ? "Light" : "Dark"}
                 </button>

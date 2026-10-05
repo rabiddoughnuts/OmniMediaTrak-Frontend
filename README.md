@@ -6,7 +6,11 @@ The Fastify/PostgreSQL backend and the custom data-ingestion/database-building p
 
 ## Current Status
 
-This is an actively developed private-alpha MVP. The public frontend currently demonstrates catalog browsing and filtering, registration/login/logout flows, authenticated list retrieval and removal, responsive navigation, and fallback content when the API is unavailable. It is not a hosted production service.
+This is an actively developed private alpha. The public frontend currently
+demonstrates catalog browsing and filtering, media details and tracking,
+registration/login/logout, profiles and account rights controls, named and
+shared static/dynamic collections, privacy-thresholded recommendations, and support intake.
+It is not a hosted production service.
 
 | Home | Catalog |
 |---|---|
@@ -16,13 +20,18 @@ This is an actively developed private-alpha MVP. The public frontend currently d
 
 ```mermaid
 flowchart LR
-    Browser[Next.js browser and server components] -->|REST + session cookie| API[Private Fastify API]
+    Browser[Browser] -->|same-origin pages and /api| Web[Next.js frontend and BFF]
+    Web -->|private REST + session cookie| API[Private Fastify API]
     API --> DB[(PostgreSQL media and user data)]
     Pipeline[Private ingestion pipeline] --> DB
     Providers[External metadata providers] --> Pipeline
 ```
 
 Only the left-hand frontend is published in this repository. See [Architecture and Public Boundary](docs/architecture.md) for the intentionally limited interface-level view.
+
+## Design References
+
+- [Dark mode design comparison](docs/dark-mode-design-comparison.md): original CS2800 theme compared with the current frontend, including palette, component, and design-decision tables.
 
 ## API Route List
 
@@ -34,10 +43,17 @@ Auth
 - `POST /auth/login`
 - `POST /auth/logout`
 - `GET /auth/me`
+- `GET /auth/username-available`
+- `POST /auth/email/verification/request`
+- `POST /auth/email/verification/confirm`
+- `POST /auth/password/change`
+- `GET /auth/sessions`
+- `POST /auth/sessions/revoke-others`
 
 Media
 
 - `GET /media`
+- `GET /media/facets`
 - `GET /media/:id`
 - `POST /media`
 - `PUT /media/:id`
@@ -46,9 +62,24 @@ Media
 
 List
 
-- `GET /list`
+- `POST /list/membership`
 - `POST /list`
+- `GET /list/:mediaId`
+- `PATCH /list/:mediaId`
 - `DELETE /list/:mediaId`
+- `GET|POST /lists`
+- `GET|POST|PUT|DELETE /lists/:listId/items[/mediaId]`
+- `GET|POST|DELETE /lists/:listId/shares[/userId]`
+- `POST /lists/:listId/share-links`
+- `GET|POST /lists/share-links/:token[/accept]`
+- `GET|POST|DELETE /connections[/requests]`
+
+Profile, recommendations, and support
+
+- `GET|PATCH|DELETE /profile`
+- `GET /profile/export`
+- `GET /trends/related/:mediaId`
+- `POST /support/contact`
 
 ## Setup Instructions
 
@@ -61,11 +92,21 @@ npm run dev
 
 Default local URL: `http://localhost:3000`
 
-The home and catalog pages contain fallback records and can be inspected without the private backend. Authentication and personal-list operations require a compatible API implementing the contract below.
+The frontend can be inspected without the private backend, but catalog records,
+authentication, and personal-list operations require a compatible API
+implementing the contract below. It does not substitute fictional records when
+the API is unavailable.
 
-## Environment Variable Requirements
+## Environment Variables
 
-- `NEXT_PUBLIC_API_BASE_URL` (default: `http://localhost:3001`)
+- `INTERNAL_API_BASE_URL`: server-only Fastify URL used by Next.js and the
+  same-origin BFF; local default is `http://localhost:3001`.
+- `NEXT_PUBLIC_API_BASE_URL`: optional browser override for special local
+  development. Leave unset in hosted environments so browser calls use `/api`.
+- `TRUSTED_PUBLIC_HOSTS`: comma-separated exact hosts accepted by the BFF in
+  the selected deployment.
+
+The private API and database do not need public browser-facing endpoints.
 
 ## Stack
 
@@ -82,10 +123,16 @@ Fonts and images used by the frontend are under `public/` (e.g. `public/fonts`, 
 
 - / (home)
 - /catalog (media catalog + filters)
-- /list (personal list)
+- /list (All Media, static/dynamic collections, and sharing)
+- /list/invite/[token] (private collection invitation acceptance)
+- /media/[id] (media details and tracking)
+- /account (profile, trend consent, export, deletion)
+- /privacy
+- /contact
 - /auth/register
 - /auth/login
 - /auth/logout
+- /auth/verify-email
 
 ## Validation
 

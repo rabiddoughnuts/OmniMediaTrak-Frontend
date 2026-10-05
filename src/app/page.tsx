@@ -1,3 +1,7 @@
+import { serverApiUrl } from "../lib/api-url";
+
+export const dynamic = "force-dynamic";
+
 type MediaItem = {
   id: string;
   title: string;
@@ -9,32 +13,20 @@ type MediaResponse = {
   items: MediaItem[];
 };
 
-const FALLBACK_ITEMS: MediaItem[] = [
-  { id: "fallback-1", title: "Skyward Signals", type: "anime" },
-  { id: "fallback-2", title: "The Memory Library", type: "book" },
-  { id: "fallback-3", title: "Echoes of Orion", type: "game" },
-];
-
 async function fetchMediaItems(): Promise<MediaItem[]> {
-  const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
-
   try {
-    const response = await fetch(`${baseUrl}/media?page=1&pageSize=3`, {
-      next: { revalidate: 60 },
+    const response = await fetch(serverApiUrl("/media?page=1&pageSize=3"), {
+      cache: "no-store",
     });
 
     if (!response.ok) {
-      return FALLBACK_ITEMS;
+      return [];
     }
 
     const data = (await response.json()) as MediaResponse;
-    if (!Array.isArray(data.items) || data.items.length === 0) {
-      return FALLBACK_ITEMS;
-    }
-
-    return data.items.slice(0, 3);
+    return Array.isArray(data.items) ? data.items.slice(0, 3) : [];
   } catch {
-    return FALLBACK_ITEMS;
+    return [];
   }
 }
 

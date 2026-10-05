@@ -1,7 +1,9 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { browserApiUrl } from "../../../lib/api-url";
+import { notifyAuthChanged, safeAuthRedirectPath } from "../../../lib/auth-state";
 
 type FormState = {
   email: string;
@@ -17,7 +19,6 @@ function LoginPageContent() {
   const [form, setForm] = useState<FormState>({ email: "", password: "" });
   const [status, setStatus] = useState<"idle" | "loading">("idle");
   const [feedback, setFeedback] = useState<Feedback>(null);
-  const router = useRouter();
   const searchParams = useSearchParams();
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -25,26 +26,29 @@ function LoginPageContent() {
     setStatus("loading");
     setFeedback(null);
 
-    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3001";
-
     try {
-      const response = await fetch(`${baseUrl}/auth/login`, {
+      const response = await fetch(browserApiUrl("/auth/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify(form),
       });
 
+      const contentType = response.headers.get("content-type") ?? "";
+      if (!contentType.includes("application/json")) {
+        throw new Error("Login service returned an invalid response");
+      }
+      const data = (await response.json()) as { error?: string };
+
       if (!response.ok) {
-        const data = (await response.json()) as { error?: string };
         throw new Error(data.error ?? "Login failed");
       }
 
-      const nextPath = searchParams.get("next") ?? "/";
+      const nextPath = safeAuthRedirectPath(searchParams.get("next"));
       setFeedback({ type: "success", message: "Signed in. Welcome back!" });
       setForm({ email: "", password: "" });
-      window.dispatchEvent(new Event("omnimediatrak:auth"));
-      router.push(nextPath);
+      notifyAuthChanged("login");
+      window.location.assign(nextPath);
     } catch (error) {
       setFeedback({
         type: "error",
@@ -111,7 +115,7 @@ function LoginPageContent() {
 
         <p className="helper">
           New here?{" "}
-          <a href={`/auth/register?next=${encodeURIComponent(searchParams.get("next") ?? "/")}`}>
+          <a href={`/auth/register?next=${encodeURIComponent(safeAuthRedirectPath(searchParams.get("next")))}`}>
             Create an account
           </a>
         </p>
